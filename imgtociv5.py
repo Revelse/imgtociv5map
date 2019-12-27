@@ -51,21 +51,12 @@ class Maploader():
 
         width, height = self.img.size
 
-        pixel_per_width = width/self.selected
-        pixel_per_height = height/self.selected
-
-        wd, hg = 0, 0
-
-        while wd + pixel_per_width < self.selected:
-            wd += pixel_per_width
-            hg += pixel_per_height
-
-
         ratio = width/height
 
         self.m_InfoByte = self.m_File.read(1)
-        self.m_Width = math.floor(wd)
-        self.m_Height = math.floor(hg)
+
+        self.m_Width = math.floor(self.selected)
+        self.m_Height = math.floor(self.m_Width/ratio)
 
         self.m_File.seek(9)
         first_bytes = self.m_File.read(0x506 - 9)
@@ -101,9 +92,19 @@ class Maploader():
                 #define areaType by RBG-Values
                 areaType = 6
 
-                if r > 125 and g > 125 and b > 125:
-                    areaType = 2
-                elif g > 35:
+                if r > 220 and g > 220 and b > 220:
+                    areaType = 4
+                elif r > 100 and g > 100 and b > 100 and r < 150 and g < 150 and b < 150:
+                    areaType = 5
+                elif g > 130 and r > 130 and g < 200:
+                    areaType = 1
+                elif r>170 and g>170 and b < 200:
+                    areaType = 4
+                elif r < 20 and g < 20 and b < 20:
+                    areaType = 1
+                elif r+g<b+70:
+                    areaType = 6
+                else:
                     areaType = 0
                 #write terrain-hex-infos
 
@@ -131,9 +132,9 @@ class Maploader():
             # add additional scenario space otherwise the map will not load within the map-editor
             # normally a field has bytes(8) information but due to the fact that the base-file is 80*80
             # we only need to generate bytes(4) for every extra field due to a maximal size of 128*80 (GIANT)
-            for y in range(self.m_Width):
-                for x in range(self.m_Height):
-                    f.write(struct.pack("<I", 4294967295))  
+            if self.m_Width*self.m_Height > 80*80:
+                for x in range(self.m_Width*self.m_Height - 80*80):
+                    f.write(struct.pack("<II", 4294967295, 4294967295)) 
 
         print("Generated map with Width %d and height %d to file %s." % (self.m_Width, self.m_Height, FILE_OUTPUT_NAME))
 
